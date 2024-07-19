@@ -1,0 +1,24 @@
+{
+  "name": "classactivity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "nodemon --watch server --watch .env server/main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^4.10.4",
+    "apollo-server-express": "^3.13.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "graphql": "^16.8.1",
+    "graphql-tools": "^9.0.1",
+    "mongodb": "^6.7.0",
+    "nodemon": "^3.1.0",
+    "uid": "^2.0.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {}
+}
