@@ -64,8 +64,14 @@ const updateDBEmployee = async (employee) => {
   }
 };
 
-const deleteDBEmployee = async (emp_id) =>
-  await employeeCollection.deleteOne({ emp_id: emp_id });
+const deleteDBEmployee = async (emp_id) => {
+  const dbEmployee = await employeeCollection.findOne({ emp_id, status: 0 });
+  if (dbEmployee) {
+    return await employeeCollection.deleteOne({ emp_id });
+  } else {
+    return "Can't Delete Employee He is Still Working!";
+  }
+};
 
 const getFilteredDBEmployees = async (filters) =>
   await employeeCollection.find(filters).toArray();

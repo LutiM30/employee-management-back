@@ -8,17 +8,39 @@ const {
   updateDBEmployee,
   getFilteredDBEmployees,
 } = require('../dbconnect');
+const { GET_RETIREMENT_COUNTDOWN, AGE_CALCULATOR } = require('../constants');
 
-const getEmployees = async () => await getDBEmployees();
-const getOneEmployee = async (_, { emp_id }) => await getOneDBEmployee(emp_id);
+const getEmployees = async () => {
+  const dbEmployees = await getDBEmployees();
+  const withRetirementData = dbEmployees.map((employee) => ({
+    ...employee,
+    ...GET_RETIREMENT_COUNTDOWN(employee.birthDate),
+    age: AGE_CALCULATOR(employee.birthDate),
+  }));
+
+  return withRetirementData;
+};
+const getOneEmployee = async (_, { emp_id }) => {
+  const dbEmployee = await getOneDBEmployee(emp_id);
+
+  const retirementData = GET_RETIREMENT_COUNTDOWN(dbEmployee.birthDate);
+
+  return {
+    ...dbEmployee,
+    ...retirementData,
+    age: AGE_CALCULATOR(dbEmployee.birthDate),
+  };
+};
 
 const addEmployee = async (_, { employee }) => {
-  const { firstName, lastName, age, joined, emp_id } = employee;
+  const { firstName, lastName, birthDate, emp_id, joined } = employee;
+
+  const age = AGE_CALCULATOR(birthDate);
 
   // Validation
   if (!firstName) throw new Error('First Name is required');
   if (!lastName) throw new Error('Last Name is required');
-  if (age < 20 || age > 70) throw new Error('Age must be between 20 and 70');
+  if (age < 20 || age > 65) throw new Error('Age must be between 20 and 65');
   if (!joined) throw new Error('Joining Date is required');
 
   const newEmployee = {
@@ -27,6 +49,7 @@ const addEmployee = async (_, { employee }) => {
     joined: new Date(joined),
     created: new Date(),
     status: 1,
+    age: AGE_CALCULATOR(birthDate),
   };
 
   const result = await addDBEmployee(newEmployee);
@@ -49,7 +72,9 @@ const updateEmployee = async (_, { employee }) => {
 
     if (result.modifiedCount > 0) {
       // Fetch the updated employee from the database
-      const updatedEmployee = await getOneDBEmployee(newEmployee.emp_id);
+      const updatedEmployee = await getOneEmployee(_, {
+        emp_id: newEmployee.emp_id,
+      });
 
       if (!updatedEmployee) {
         throw new Error('Failed to fetch updated employee.');
@@ -71,18 +96,17 @@ const deleteEmployee = async (_, { emp_id }) => {
   if (result.acknowledged && result.deletedCount) {
     return 'Employee Deleted';
   } else {
-    throw new Error('Failed to delete the employee.');
+    throw new Error(result);
   }
 };
 
 const getFilteredEmployees = async (_, { filters }) => {
-  let { searchQuery, type } = filters;
+  let { searchQuery, type, upcomingRetirement } = filters;
   searchQuery = searchQuery.trim();
   let query = {};
 
   if (searchQuery) {
     query.$or = [
-      { age: { $regex: searchQuery, $options: 'i' } },
       { designation: { $regex: searchQuery, $options: 'i' } },
       { department: { $regex: searchQuery, $options: 'i' } },
       { emp_id: { $regex: searchQuery, $options: 'i' } },
@@ -96,7 +120,23 @@ const getFilteredEmployees = async (_, { filters }) => {
     query.type = type;
   }
 
-  return await getFilteredDBEmployees(query);
+  const dbEmployees = await getFilteredDBEmployees(query);
+
+  let withRetirementData = dbEmployees.map((employee) => ({
+    ...employee,
+    ...GET_RETIREMENT_COUNTDOWN(employee.birthDate),
+    age: AGE_CALCULATOR(employee.birthDate),
+  }));
+
+  if (upcomingRetirement) {
+    withRetirementData = [
+      ...withRetirementData.filter(
+        (employee) => employee.years === 0 && employee.months <= 6
+      ),
+    ];
+  }
+
+  return withRetirementData;
 };
 
 module.exports = {

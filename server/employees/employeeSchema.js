@@ -16,11 +16,20 @@ module.exports = gql`
     type: String!
     status: Int!
     created: GraphQLDate!
+    diffDays: Int!
+    years: Int!
+    months: Int!
+    days: Int!
+    retirementDate: String!
+    retirementDateText: String!
+    retirementCountdownText: String!
+    birthDate: String!
   }
 
   input Filters {
     searchQuery: String
     type: String
+    upcomingRetirement: Boolean
   }
 
   type DropdownOptions {
@@ -46,12 +55,12 @@ module.exports = gql`
   input EmployeeInputs {
     firstName: String!
     lastName: String!
-    age: Int!
     joined: GraphQLDate!
     designation: String!
     department: String!
     type: String!
     emp_id: String
+    birthDate: String!
   }
   input EditEmployeeInputs {
     designation: String!
